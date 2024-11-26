@@ -1,0 +1,25 @@
+utilizando apenas java e postgresql, realize a tarefa abaixo:
+O objetivo é desenvolver o Google Keep Tabajara
+
+Cada nova anotação tem: Título, Data/Hora, Descrição, Cor e Foto
+
+Funcionalidades:
+
+Cadastrar novas anotações. Quando uma nova anotação é criada será possível determinar a cor que aparecerá na listagem.
+Excluir anotações.
+Alterar anotações;
+Exigências:
+
+Utilizar o padrão DAO de persistência
+Aplicar o paradigma O.O.
+Dica:
+
+Crie a classe Anotacao, classe AnotacaoDAO e etc.
+
+O banco de dados postgres implementa e popula o banco que deve manter além da postagem, os dados do autor e o java utiliza jdbc para realizar as funções mencionadas, devendo rolar num loop while que pede a condição (1 para cadastro, 2 para alteração, 3 para exclusão e etc 0 para finalizar o programa). no java, o main terá o loop while que fará a pergunta para o usuario e dependendo da função escolhida ele chama o metodo correspondente da classe DAO que implementa a função. O software deve responder da seguinte forma:
+o software solicita usuario e senha do autor e segue solicitando a mesma até que um login válido seja fornecido ou o usuario digite 0 para sair.
+
+1.Cadastrar. Quando a opção 1 for solicitada deverá ser solicitado Título, Descrição, Cor e o caminho no computador para a Foto (a foto deve ser armazenada no banco como um bytea e a conversão deve ser feita dentro do java). Data/Hora deverá ser armazenada do momento que foi realizado o cadastro 
+2.Excluir. quando a opção 2 for selecionada, o software deve perguntar se o usuario deseja ver as proprias publicações e caso positivo deve mostra-las. o usuario então pode escrever o titulo de uma de suas anotações. Caso o usuario não coloque um titulo valido ou coloque o titulo de outro usuario o sistema deve avisar o usuario, não executar nenhuma exclusão e solicitar novamente o titulo a ser deletado. caso o usuario digite 0 o sistema sai sem fazer exclusão.  
+3.Alterar. quando a opção 3 for selecionada, o software deve perguntar se o usuario deseja ver as proprias publicações e caso positivo deve mostra-las. o usuario então pode escrever o titulo de uma de suas anotações. Caso o usuario não coloque um titulo valido ou coloque o titulo de outro usuario o sistema deve avisar o usuario, não executar nenhuma ação e solicitar novamente o titulo a ser deletado. caso o usuario digite 0 o sistema sai sem fazer exclusão. quando um titulo valido for inserido o sistema deve pedir em ordem Título, Data/Hora, Descrição, Cor e caminho da Foto no computador, caso o usuario digite 0 em qualquer um desses itens, essa opção não deve sofrer alteração (por exemplo, se na hora de digitar a cor o usuario digitar 0, a cor original deve ser mantida)
+
