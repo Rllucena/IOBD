@@ -1,6 +1,6 @@
 package persistencia;
 import java.sql.*;
-//import java.time.LocalDateTime;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -70,6 +70,38 @@ public class AnotacaoDAO {
         }
     }
 
+    
+    
+    public List<Anotacao> listarTodasAnotacoesComAutor() throws SQLException {
+        String sql = """
+            SELECT a.id, a.titulo, a.data_hora, a.descricao, a.cor, a.foto, a.autor_id, au.nome AS autor_nome
+            FROM anotacoes a
+            JOIN autores au ON a.autor_id = au.id
+            ORDER BY a.data_hora
+        """;
+    
+        List<Anotacao> anotacoes = new ArrayList<>();
+        try (PreparedStatement stmt = connection.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+    
+            while (rs.next()) {
+                Anotacao anotacao = new Anotacao();
+                anotacao.setId(rs.getInt("id"));
+                anotacao.setTitulo(rs.getString("titulo"));
+                anotacao.setDataHora(rs.getTimestamp("data_hora").toLocalDateTime());
+                anotacao.setDescricao(rs.getString("descricao"));
+                anotacao.setCor(rs.getString("cor"));
+                anotacao.setFoto(rs.getBytes("foto"));
+                anotacao.setAutorId(rs.getInt("autor_id"));
+                anotacao.setAutorNome(rs.getString("autor_nome")); // Adiciona o nome do autor
+    
+                anotacoes.add(anotacao);
+            }
+        }
+        return anotacoes;
+    }
+    
+        
     public Anotacao buscarAnotacaoPorTitulo(int autorId, String titulo) throws SQLException {
         String sql = "SELECT * FROM anotacoes WHERE autor_id = ? AND titulo = ?";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
@@ -91,5 +123,37 @@ public class AnotacaoDAO {
         }
         return null; // Caso não encontre a anotação
     }
+
+
+
+
+    
+    public void copiarAnotacao(int autorId, String tituloOriginal, String novoTitulo) throws SQLException {
+        String sqlBuscar = "SELECT * FROM anotacoes WHERE autor_id = ? AND titulo = ?";
+        String sqlInserir = "INSERT INTO anotacoes (titulo, data_hora, descricao, cor, foto, autor_id) VALUES (?, ?, ?, ?, ?, ?)";
+    
+        try (PreparedStatement stmtBuscar = connection.prepareStatement(sqlBuscar)) {
+            stmtBuscar.setInt(1, autorId);
+            stmtBuscar.setString(2, tituloOriginal);
+            try (ResultSet rs = stmtBuscar.executeQuery()) {
+                if (rs.next()) {
+                    try (PreparedStatement stmtInserir = connection.prepareStatement(sqlInserir)) {
+                        stmtInserir.setString(1, novoTitulo);
+                        stmtInserir.setTimestamp(2, Timestamp.valueOf(rs.getTimestamp("data_hora").toLocalDateTime()));
+                        stmtInserir.setString(3, rs.getString("descricao"));
+                        stmtInserir.setString(4, rs.getString("cor"));
+                        stmtInserir.setBytes(5, rs.getBytes("foto"));
+                        stmtInserir.setInt(6, autorId);
+                        stmtInserir.executeUpdate();
+                    }
+                } else {
+                    throw new SQLException("Anotação original não encontrada.");
+                }
+            }
+        }
+    }
+
+
+
     
 }

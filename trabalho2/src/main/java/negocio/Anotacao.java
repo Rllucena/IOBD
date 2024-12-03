@@ -9,7 +9,16 @@ public class Anotacao {
     private String cor;
     private byte[] foto;
     private int autorId;
+    private String autorNome; 
 
+    public String getAutorNome() {
+        return autorNome;
+    }
+    
+    public void setAutorNome(String autorNome) {
+        this.autorNome = autorNome;
+    }
+    
     public int getId() {
         return id;
     }

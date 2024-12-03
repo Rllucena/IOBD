@@ -21,3 +21,7 @@ CREATE TABLE anotacoes (
     autor_id INT REFERENCES autores(id)
 );
 
+INSERT INTO autores (nome, senha) 
+VALUES ('miquelangelo', 'senha321');
+INSERT INTO autores (nome, senha) 
+VALUES ('donatello', 'senha123');

@@ -4,6 +4,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.*;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Scanner;
 
 import negocio.Anotacao;
@@ -31,8 +32,16 @@ public class Main {
                     System.out.println("Login realizado com sucesso!");
                     int opcao;
                     do {
-                        System.out.println("\n1. Cadastrar\n2. Excluir\n3. Alterar\n0. Sair");
-                        System.out.print("Escolha uma opção: ");
+                        System.out.println("""
+                            \nMenu:
+                            1. Cadastrar
+                            2. Excluir
+                            3. Alterar
+                            4. Copiar
+                            5. Listar
+                            0. Sair
+                            Escolha uma opção:
+                            """);
                         opcao = scanner.nextInt();
                         scanner.nextLine(); // Consumir newline
 
@@ -40,10 +49,13 @@ public class Main {
                             case 1 -> cadastrarAnotacao(scanner, anotacaoDAO, autorId);
                             case 2 -> excluirAnotacao(scanner, anotacaoDAO, autorId);
                             case 3 -> alterarAnotacao(scanner, anotacaoDAO, autorId);
+                            case 4 -> copiarAnotacao(scanner, anotacaoDAO, autorId);
+                            case 5 -> listarAnotacoesComAutor(scanner, anotacaoDAO);
                             case 0 -> System.out.println("Saindo...");
                             default -> System.out.println("Opção inválida.");
                         }
                     } while (opcao != 0);
+
                 }
 
                 System.out.print("Digite seu nome de usuário ou 0 para sair: ");
@@ -164,4 +176,65 @@ public class Main {
             System.out.println("Anotação alterada com sucesso!");
         }
     }
+
+
+private static void copiarAnotacao(Scanner scanner, AnotacaoDAO anotacaoDAO, int autorId) throws SQLException {
+    System.out.print("Digite o título da anotação que deseja copiar: ");
+    String tituloOriginal = scanner.nextLine();
+    System.out.print("Digite o novo título para a cópia: ");
+    String novoTitulo = scanner.nextLine();
+
+    anotacaoDAO.copiarAnotacao(autorId, tituloOriginal, novoTitulo);
+    System.out.println("Anotação copiada com sucesso!");
+}
+
+
+private static void listarAnotacoesComAutor(Scanner scanner, AnotacaoDAO anotacaoDAO) throws SQLException {
+    List<Anotacao> anotacoes = anotacaoDAO.listarTodasAnotacoesComAutor();
+
+    if (anotacoes.isEmpty()) {
+        System.out.println("Não há anotações cadastradas.");
+        return;
+    }
+
+    System.out.println("\nLista de Anotações:");
+    for (Anotacao anotacao : anotacoes) {
+        String statusFoto = (anotacao.getFoto() != null) ? "Com Foto" : "Sem Foto";
+        System.out.printf("- [%s] %s: %s (%s) - Autor: %s [%s]%n",
+                anotacao.getDataHora(), anotacao.getTitulo(),
+                anotacao.getDescricao(), anotacao.getCor(),
+                anotacao.getAutorNome(), statusFoto);
+    }
+
+    System.out.print("\nDeseja exibir uma foto? (Digite o título ou 0 para voltar ao menu): ");
+    String escolha = scanner.nextLine();
+
+    if (!escolha.equals("0")) {
+        Anotacao anotacao = anotacoes.stream()
+                .filter(a -> a.getTitulo().equalsIgnoreCase(escolha))
+                .findFirst()
+                .orElse(null);
+
+        if (anotacao != null && anotacao.getFoto() != null) {
+            exibirFoto(anotacao.getFoto());
+        } else if (anotacao == null) {
+            System.out.println("Anotação não encontrada.");
+        } else {
+            System.out.println("Essa anotação não possui foto.");
+        }
+    }
+}
+
+private static void exibirFoto(byte[] foto) {
+    // Simula exibição da foto (salvando em arquivo ou processando em UI real)
+    System.out.println("Exibindo foto...");
+    try {
+        Files.write(Paths.get("foto_exibida.jpg"), foto);
+        System.out.println("Foto salva como 'foto_exibida.jpg'. Abra o arquivo para visualizar.");
+    } catch (IOException e) {
+        System.out.println("Erro ao salvar a foto: " + e.getMessage());
+    }
+}
+
+
 }
