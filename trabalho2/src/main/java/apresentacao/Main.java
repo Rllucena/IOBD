@@ -2,8 +2,13 @@ package apresentacao;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Scanner;
 
@@ -110,18 +115,35 @@ public class Main {
     }
 
     private static void excluirAnotacao(Scanner scanner, AnotacaoDAO anotacaoDAO, int autorId) throws SQLException {
+        // Pergunta se o usuário deseja listar suas anotações
         System.out.print("Deseja listar suas anotações? (s/n): ");
         if (scanner.nextLine().equalsIgnoreCase("s")) {
-            for (Anotacao anotacao : anotacaoDAO.listarAnotacoesPorAutor(autorId)) {
-                System.out.println("- " + anotacao.getTitulo());
+            // Lista apenas as anotações do autor
+            List<Anotacao> anotacoes = anotacaoDAO.listarAnotacoesPorAutor(autorId);
+            if (anotacoes.isEmpty()) {
+                System.out.println("Você não possui anotações cadastradas.");
+                return;
+            }
+            System.out.println("\nSuas Anotações:");
+            for (Anotacao anotacao : anotacoes) {
+                System.out.printf("- ID: %d | Título: %s%n", anotacao.getId(), anotacao.getTitulo());
             }
         }
-
-        System.out.print("Digite o título da anotação a ser excluída ou 0 para cancelar: ");
-        String titulo = scanner.nextLine();
-        if (!titulo.equals("0")) {
-            anotacaoDAO.excluirAnotacao(autorId, titulo);
+    
+        // Solicita o ID da anotação a ser excluída
+        System.out.print("Digite o ID da anotação a ser excluída ou 0 para cancelar: ");
+        int id = Integer.parseInt(scanner.nextLine());
+        if (id == 0) {
+            System.out.println("Operação cancelada.");
+            return;
+        }
+    
+        // Chama o DAO para verificar e excluir a anotação
+        boolean excluido = anotacaoDAO.excluirAnotacaoPorId(autorId, id);
+        if (excluido) {
             System.out.println("Anotação excluída com sucesso!");
+        } else {
+            System.out.println("Erro: Anotação não encontrada ou não pertence a você.");
         }
     }
 
@@ -178,18 +200,56 @@ public class Main {
     }
 
 
-private static void copiarAnotacao(Scanner scanner, AnotacaoDAO anotacaoDAO, int autorId) throws SQLException {
-    System.out.print("Digite o título da anotação que deseja copiar: ");
-    String tituloOriginal = scanner.nextLine();
-    System.out.print("Digite o novo título para a cópia: ");
-    String novoTitulo = scanner.nextLine();
-
-    anotacaoDAO.copiarAnotacao(autorId, tituloOriginal, novoTitulo);
-    System.out.println("Anotação copiada com sucesso!");
-}
+    private static void copiarAnotacao(Scanner scanner, AnotacaoDAO anotacaoDAO, int autorId) throws SQLException {
+        // Solicita o ID da anotação a ser copiada
+        System.out.print("Deseja listar suas anotações ou todas as anotações? (s = suas / t = todas / n = nenhuma): ");
+        String opcao = scanner.nextLine().toLowerCase();
+    
+        List<Anotacao> anotacoes;
+        if (opcao.equals("s")) {
+            anotacoes = anotacaoDAO.listarAnotacoesPorAutor(autorId);
+        } else if (opcao.equals("t")) {
+            anotacoes = anotacaoDAO.listarTodasAnotacoesComAutor();
+        } else {
+            System.out.println("Operação cancelada.");
+            return;
+        }
+    
+        if (anotacoes.isEmpty()) {
+            System.out.println("Nenhuma anotação encontrada.");
+            return;
+        }
+    
+        // Lista as anotações disponíveis
+        System.out.println("\nAnotações Disponíveis:");
+        for (Anotacao anotacao : anotacoes) {
+            System.out.printf("- ID: %d | Título: %s | Autor: %s%n", 
+                              anotacao.getId(), anotacao.getTitulo(), anotacao.getAutorNome());
+        }
+    
+        // Solicita o ID da anotação original e o novo título
+        System.out.print("Digite o ID da anotação que deseja copiar ou 0 para cancelar: ");
+        int idOriginal = Integer.parseInt(scanner.nextLine());
+        if (idOriginal == 0) {
+            System.out.println("Operação cancelada.");
+            return;
+        }
+    
+        System.out.print("Digite o novo título para a cópia: ");
+        String novoTitulo = scanner.nextLine();
+    
+        // Chama o DAO para copiar a anotação
+        boolean copiada = anotacaoDAO.copiarAnotacaoPorId(autorId, idOriginal, novoTitulo);
+        if (copiada) {
+            System.out.println("Anotação copiada com sucesso!");
+        } else {
+            System.out.println("Erro: Anotação original não encontrada.");
+        }
+    }
 
 
 private static void listarAnotacoesComAutor(Scanner scanner, AnotacaoDAO anotacaoDAO) throws SQLException {
+    // Obtém todas as anotações com autor
     List<Anotacao> anotacoes = anotacaoDAO.listarTodasAnotacoesComAutor();
 
     if (anotacoes.isEmpty()) {
@@ -197,24 +257,40 @@ private static void listarAnotacoesComAutor(Scanner scanner, AnotacaoDAO anotaca
         return;
     }
 
+    // Pergunta ao usuário o critério de ordenação
+    System.out.print("\nComo deseja ordenar as anotações? (1: ID, 2: Autor, 3: Data/Hora): ");
+    int criterioOrdenacao = Integer.parseInt(scanner.nextLine());
+
+    // Ordena a lista com base na escolha
+    switch (criterioOrdenacao) {
+        case 1 -> anotacoes.sort(Comparator.comparingInt(Anotacao::getId)); // Ordena por ID
+        case 2 -> anotacoes.sort(Comparator.comparing(Anotacao::getAutorNome, String.CASE_INSENSITIVE_ORDER)); // Ordena por Autor
+        case 3 -> anotacoes.sort(Comparator.comparing(Anotacao::getDataHora)); // Ordena por Data/Hora
+        default -> System.out.println("Opção inválida. Exibindo na ordem padrão."); // Ordem original
+    }
+
+    // Exibe a lista de anotações com ID
     System.out.println("\nLista de Anotações:");
     for (Anotacao anotacao : anotacoes) {
         String statusFoto = (anotacao.getFoto() != null) ? "Com Foto" : "Sem Foto";
-        System.out.printf("- [%s] %s: %s (%s) - Autor: %s [%s]%n",
-                anotacao.getDataHora(), anotacao.getTitulo(),
+        System.out.printf("ID: %d | Data/Hora: %s | Título: %s | Descrição: %s | Cor: %s | Autor: %s | Foto: %s%n",
+                anotacao.getId(), anotacao.getDataHora(), anotacao.getTitulo(),
                 anotacao.getDescricao(), anotacao.getCor(),
                 anotacao.getAutorNome(), statusFoto);
     }
 
-    System.out.print("\nDeseja exibir uma foto? (Digite o título ou 0 para voltar ao menu): ");
-    String escolha = scanner.nextLine();
+    // Pergunta ao usuário se deseja exibir uma foto
+    System.out.print("\nDeseja exibir uma foto? (Digite o ID ou 0 para voltar ao menu): ");
+    int escolhaId = Integer.parseInt(scanner.nextLine()); // Entrada como ID
 
-    if (!escolha.equals("0")) {
+    if (escolhaId != 0) {
+        // Localiza a anotação pelo ID informado
         Anotacao anotacao = anotacoes.stream()
-                .filter(a -> a.getTitulo().equalsIgnoreCase(escolha))
+                .filter(a -> a.getId() == escolhaId)
                 .findFirst()
                 .orElse(null);
 
+        // Verifica se a anotação existe e tem foto
         if (anotacao != null && anotacao.getFoto() != null) {
             exibirFoto(anotacao.getFoto());
         } else if (anotacao == null) {

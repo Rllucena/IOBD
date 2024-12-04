@@ -1,6 +1,9 @@
 package persistencia;
-import java.sql.*;
-
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -153,7 +156,35 @@ public class AnotacaoDAO {
         }
     }
 
+    public boolean copiarAnotacaoPorId(int novoAutorId, int idOriginal, String novoTitulo) throws SQLException {
+        String sql = """
+            INSERT INTO anotacoes (titulo, descricao, cor, foto, autor_id, data_hora)
+            SELECT ?, descricao, cor, foto, ?, CURRENT_TIMESTAMP
+            FROM anotacoes
+            WHERE id = ?
+        """;
+    
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, novoTitulo); // Define o novo título
+            stmt.setInt(2, novoAutorId);  // Define o autor da cópia como o usuário atual
+            stmt.setInt(3, idOriginal);  // Define o ID da anotação original
+    
+            // Retorna true se a cópia foi feita com sucesso
+            return stmt.executeUpdate() > 0;
+        }
+    }
 
+    public boolean excluirAnotacaoPorId(int autorId, int id) throws SQLException {
+        String sql = "DELETE FROM anotacoes WHERE id = ? AND autor_id = ?";
+        
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, id);
+            stmt.setInt(2, autorId);
+    
+            // Retorna true se uma linha foi afetada (anotação excluída)
+            return stmt.executeUpdate() > 0;
+        }
+    }
 
     
 }

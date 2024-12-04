@@ -25,3 +25,5 @@ INSERT INTO autores (nome, senha)
 VALUES ('miquelangelo', 'senha321');
 INSERT INTO autores (nome, senha) 
 VALUES ('donatello', 'senha123');
+INSERT INTO autores (nome, senha) 
+VALUES ('leonardo', 'senha');
